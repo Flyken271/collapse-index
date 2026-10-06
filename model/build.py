@@ -1,10 +1,14 @@
 """
-Full build: fetch -> score -> weight -> solve dynamics -> emit web/data.js
+Full build: fetch -> score -> weight -> solve dynamics -> emit docs/data.js
 
-Run:  python3 model/build.py
-Every step degrades gracefully; a dead source keeps its stored value.
+Run:  python model/build.py     (Windows)
+      python3 model/build.py    (Linux / the GitHub runner)
+
+Every step degrades gracefully. A dead source keeps its stored value and is
+flagged "manual" in the output, so the page can show how stale each number is.
 """
-import json, sys, os, datetime, pathlib
+import json, sys, datetime, pathlib
+
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "model"), str(ROOT / "fetch")]
 
@@ -14,65 +18,110 @@ import dynamics as DY
 import sources as SRC
 
 STATE = ROOT / "state.json"
+OUT_DIR = ROOT / "docs"          # rename to "web" if not serving from Pages
 
 
 def load_state():
     if STATE.exists():
-        return json.loads(STATE.read_text())
+        try:
+            return json.loads(STATE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
     return {"as_of": {}}
+
+
+def score(cur, a0, a100):
+    return max(0.0, min(100.0, (cur - a0) / (a100 - a0) * 100))
 
 
 def main():
     state = load_state()
     live = SRC.fetch_all()
 
-    # ---- apply live values over the stored table ----------------------------
-    table = {row[0]: list(row) for row in IN.D}
-    for ind_id, rec in live.items():
-        if ind_id in table:
-            table[ind_id][4] = rec["value"]
-            state["as_of"][str(ind_id)] = rec["as_of"]
-    IN.D = [tuple(v) for v in table.values()]
+    # ---- apply live values over the stored table ---------------------------
+    rows = []
+    for (i, dom, topic, ind, cur, a0, a100, unit, src, conf) in IN.D:
+        if i in live:
+            cur = live[i]["value"]
+            state["as_of"][str(i)] = live[i]["as_of"]
+            conf = 1
+        rows.append(dict(id=i, domain=dom, topic=topic, indicator=ind,
+                         current=round(cur, 4), a0=a0, a100=a100, unit=unit,
+                         source=src, confidence=conf,
+                         score=round(score(cur, a0, a100), 1)))
 
-    # ---- score, weight, solve ----------------------------------------------
-    os.chdir(ROOT)
-    exec(open(ROOT / "model" / "indicators.py").read(), {"__name__": "__main__"})
-    WT.build()
-    years, _ = DY.time_to(100.0)
+    # ---- derive weights from the four axes ---------------------------------
+    tot = 0.0
+    for r in rows:
+        S, V, I, C = WT.AX[r["id"]]
+        w = (S ** 1.0) * (V ** 0.8) * (I ** 0.4) * (C ** 0.6)
+        r.update(S=S, V=V, I=I, C=C, w_raw=w)
+        tot += w
+    for r in rows:
+        r["weight"] = r["w_raw"] / tot
 
-    w = json.loads((ROOT / "weighted_data.json").read_text())
+    weighted = sum(r["weight"] * r["score"] for r in rows)
+    flat = sum(r["score"] for r in rows) / len(rows)
 
-    # 10-year projection for the chart
+    dom = {}
+    for r in rows:
+        e = dom.setdefault(r["domain"], {"w": 0.0, "ws": 0.0, "n": 0, "s": 0.0})
+        e["w"] += r["weight"]; e["ws"] += r["weight"] * r["score"]
+        e["n"] += 1; e["s"] += r["score"]
+    for e in dom.values():
+        e["score_w"] = round(e["ws"] / e["w"], 1)
+        e["score_flat"] = round(e["s"] / e["n"], 1)
+        e["share"] = round(e["w"] * 100, 1)
+
+    # ---- coupled dynamics --------------------------------------------------
     import numpy as np
-    x0 = np.array([w["domains"][d]["score_w"] for d in DY.D])
-    wv = np.array([w["domains"][d]["share"] for d in DY.D]) / 100.0
-    t, Y = DY.run(x0, 10)
-    p = dict(t=t.tolist(), Y=Y.tolist(), index=wv.dot(Y).tolist())
+    x0 = np.array([dom[d]["score_w"] for d in DY.D])
+    wv = np.array([dom[d]["share"] for d in DY.D]) / 100.0
 
-    rows = [[r["id"], r["domain"], r["topic"], r["indicator"], r["current"], r["unit"],
-             r["score"], r["source"], r["confidence"], r["S"], r["V"], r["I"], r["C"],
-             round(r["weight"] * 100, 2), state["as_of"].get(str(r["id"]), "manual")]
-            for r in w["indicators"]]
-    dom = {k: dict(share=v["share"], w=v["score_w"], f=v["score_flat"])
-           for k, v in w["domains"].items()}
-    proj = dict(t=[t for i, t in enumerate(p["t"]) if i % 4 == 0],
-                index=[round(v, 1) for i, v in enumerate(p["index"]) if i % 4 == 0],
-                nuclear=[round(v, 1) for i, v in enumerate(p["Y"][5]) if i % 4 == 0],
-                climate=[round(v, 1) for i, v in enumerate(p["Y"][0]) if i % 4 == 0])
+    t, Y = DY.run(x0, 10)
+    proj = dict(t=[float(v) for v in t[::4]],
+                index=[round(float(v), 1) for v in wv.dot(Y)[::4]],
+                nuclear=[round(float(v), 1) for v in Y[DY.IDX["Nuclear"]][::4]],
+                climate=[round(float(v), 1) for v in Y[DY.IDX["Climate"]][::4]])
+
+    tl, Yl = DY.run(x0, 150)
+    compl = wv.dot(Yl)
+    years = None
+    for k in range(1, len(tl)):
+        if compl[k] >= 100.0:
+            a, b = compl[k - 1], compl[k]
+            years = tl[k - 1] + (100.0 - a) / (b - a) * (tl[k] - tl[k - 1])
+            break
+    if years is None:
+        years = 150.0
+
+    # ---- emit --------------------------------------------------------------
+    out_rows = [[r["id"], r["domain"], r["topic"], r["indicator"], r["current"],
+                 r["unit"], r["score"], r["source"], r["confidence"],
+                 r["S"], r["V"], r["I"], r["C"], round(r["weight"] * 100, 2),
+                 state["as_of"].get(str(r["id"]), "manual")] for r in rows]
+    out_dom = {k: dict(share=v["share"], w=v["score_w"], f=v["score_flat"])
+               for k, v in dom.items()}
 
     now = datetime.datetime.now(datetime.timezone.utc)
-    js = (f"const IND={json.dumps(rows,separators=(',',':'))};\n"
-          f"const DOM={json.dumps(dom,separators=(',',':'))};\n"
-          f"const WEIGHTED={w['weighted']};\nconst FLAT={w['flat']};\n"
-          f"const PROJ={json.dumps(proj,separators=(',',':'))};\n"
-          f"const ANCHOR_MS={int(now.timestamp()*1000)};\n"
-          f"const YEARS_TO_COLLAPSE={round(years,4)};\n"
-          f"const UPDATED=\"{now.strftime('%-d %B %Y')}\";\n")
-    (ROOT / "docs" / "data.js").write_text(js)
-    STATE.write_text(json.dumps(state, indent=1))
+    stamp = f"{now.day} {now.strftime('%B %Y')}"     # portable; %-d is glibc-only
+    js = (f"const IND={json.dumps(out_rows, separators=(',', ':'))};\n"
+          f"const DOM={json.dumps(out_dom, separators=(',', ':'))};\n"
+          f"const WEIGHTED={round(weighted, 1)};\n"
+          f"const FLAT={round(flat, 1)};\n"
+          f"const PROJ={json.dumps(proj, separators=(',', ':'))};\n"
+          f"const ANCHOR_MS={int(now.timestamp() * 1000)};\n"
+          f"const YEARS_TO_COLLAPSE={round(years, 4)};\n"
+          f'const UPDATED="{stamp}";\n')
 
-    print(f"\nweighted {w['weighted']}%  |  equal {w['flat']}%  "
-          f"|  {years:.2f} yr to 100%  |  {len(live)} live of {len(rows)}")
+    OUT_DIR.mkdir(exist_ok=True)
+    (OUT_DIR / "data.js").write_text(js, encoding="utf-8")
+    STATE.write_text(json.dumps(state, indent=1), encoding="utf-8")
+
+    print(f"\n  weighted {weighted:.1f}%   equal {flat:.1f}%   "
+          f"{years:.2f} yr to 100%   {len(live)} live of {len(rows)}")
+    for k, v in sorted(out_dom.items(), key=lambda x: -x[1]["share"]):
+        print(f"    {k:<12} share {v['share']:>5.1f}%   weighted {v['w']:>5.1f}")
 
 
 if __name__ == "__main__":

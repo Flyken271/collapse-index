@@ -4,7 +4,7 @@ import json, statistics as st
 # conf: 1 = search-confirmed value, 2 = mixed, 3 = background/constructed
 D=[
  (1,"Climate","Global temperature","GMST anomaly vs preindustrial",1.45,0,4.0,"°C","Copernicus/C3S 2025",1),
- (2,"Climate","Greenhouse gases","CO2-equivalent concentration",540,280,700,"ppm CO2e","NOAA AGGI / WMO 2025",2),
+ (2,"Climate","Greenhouse gases","Atmospheric CO2",425.7,280,700,"ppm","NOAA Mauna Loa",1),
  (3,"Climate","Ocean heat","0-2000m heat content anomaly",300,0,1000,"ZJ","Cheng et al./IAP 2026",2),
  (4,"Climate","Sea level","Rate of global mean rise",4.4,0,30,"mm/yr","NASA/JPL 2025",1),
  (5,"Climate","Tipping points","AMOC strength at 26N",16,20,5,"Sv","RAPID/NOC 2025",2),
@@ -15,7 +15,7 @@ D=[
  (10,"Biosphere","Soil","Share of land degraded",30,0,50,"%","UNCCD 2025",2),
  (11,"Resources","Freshwater","Population under seasonal scarcity",50,5,75,"% of humanity","UN-Water/UNESCO",2),
  (12,"Resources","Fisheries","Stocks fished unsustainably",35,10,70,"%","FAO SOFIA 2026",1),
- (13,"Resources","Food security","Acute food insecurity (IPC 3+)",266,50,1500,"millions","GRFC 2026",1),
+ (13,"Resources","Food security","Prevalence of undernourishment",8.5,2.5,40,"% of population","World Bank / FAO",1),
  (14,"Resources","Critical minerals","Top-3 share of refining",87,40,95,"%","IEA 2026",2),
  (15,"Resources","Energy","Fossil share of primary energy",80,10,85,"%","IEA/EI 2025",2),
  (16,"Pollution","Plastics","Annual production",450,100,1200,"Mt/yr","OECD",2),

@@ -102,15 +102,22 @@ def stooq_close(sym="^spx"):
 
 
 # indicator id -> callable returning (value, as_of)
+#
+# Only verified-working sources are listed. Units here MUST match the units of
+# the matching indicator in model/indicators.py -- a fetcher that returns a
+# different quantity than the indicator defines will silently corrupt the score.
 LIVE = {
-    2:  lambda: co2_ppm(),
-    1:  lambda: gistemp_anomaly(),
-    37: lambda: worldbank("FP.CPI.TOTL.ZG"),
-    36: lambda: worldbank("GC.DOD.TOTL.GD.ZS"),
-    13: lambda: worldbank("SN.ITK.DEFC.ZS"),
-    25: lambda: worldbank("SP.DYN.LE00.IN"),
-    35: lambda: ucdp_conflicts(),
+    1:  lambda: gistemp_anomaly(),            # deg C vs preindustrial
+    2:  lambda: co2_ppm(),                    # ppm CO2 (not CO2-equivalent)
+    13: lambda: worldbank("SN.ITK.DEFC.ZS"),  # % undernourished
+    25: lambda: worldbank("SP.DYN.LE00.IN"),  # years
+    37: lambda: worldbank("FP.CPI.TOTL.ZG"),  # % inflation
 }
+
+# Dropped, and why:
+#   35  UCDP conflicts  -- public API returns 401; needs a key or a changed base
+#   36  global debt     -- World Bank publishes no WLD aggregate for public debt
+# Both keep their stored values and are flagged "manual" on the page.
 
 
 def fetch_all():

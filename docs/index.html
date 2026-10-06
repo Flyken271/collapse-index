@@ -87,7 +87,9 @@ th{font-family:var(--mono);font-size:.63rem;letter-spacing:.14em;text-transform:
 td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
 tr:last-child td{border-bottom:0}
 .t-dom{font-family:var(--mono);font-size:.68rem;color:var(--bone-dim);letter-spacing:.07em;text-transform:uppercase}
-.t-val,.t-score,.t-w,.t-ax{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.t-val,.t-score,.t-w,.t-ax,.t-asof{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.t-asof{font-size:.7rem;color:var(--bone-dim)}
+.stale{opacity:.55;font-style:italic}
 .t-score{font-weight:600;text-align:right}
 .t-w{text-align:right;color:var(--bone-dim)}
 .t-ax{font-size:.7rem;color:var(--bone-dim);letter-spacing:.06em}
@@ -161,10 +163,10 @@ footer{padding-block:38px 56px;border-top:1px solid var(--line)}
 
 <section>
   <h2>All fifty indicators</h2>
-  <p class="lede">Current value, the four axis scores, the resulting weight, and how far the value sits between a healthy world and a finished one.</p>
+  <p class="lede">Current value, when that value was last refreshed, the four axis scores, the resulting weight, and how far the value sits between a healthy world and a finished one. Five indicators refresh automatically; the rest publish annually and are marked manual.</p>
   <div class="tablewrap">
     <table><thead><tr>
-      <th>Domain</th><th>Indicator</th><th>Current</th><th>S V I C</th>
+      <th>Domain</th><th>Indicator</th><th>Current</th><th>As of</th><th>S V I C</th>
       <th style="text-align:right">Weight</th><th style="text-align:right">Score</th><th>Source</th>
     </tr></thead><tbody id="tbody"></tbody></table>
   </div>
@@ -187,7 +189,7 @@ footer{padding-block:38px 56px;border-top:1px solid var(--line)}
 </section>
 
 <footer>
-  <div class="stamp">Compiled 6 October 2026 · 50 indicators · 10 domains<br>Weighted index 53.2% · Equal-weight index 44.8%</div>
+  <div class="stamp" id="stamp">Compiled 6 October 2026 · 50 indicators · 10 domains<br>Weighted index 53.2% · Equal-weight index 44.8%</div>
 </footer>
 </div>
 
@@ -265,6 +267,7 @@ document.getElementById("tbody").innerHTML=IND.slice().sort((a,b)=>b[13]-a[13]).
   <td class="t-dom">${r[1]}</td>
   <td>${r[2]} — <span style="color:var(--bone-dim)">${r[3]}</span></td>
   <td class="t-val">${r[4].toLocaleString()} ${r[5]}</td>
+  <td class="t-asof">${r[14]==="manual"?'<span class="stale">manual</span>':r[14]}</td>
   <td class="t-ax">${r[9]} ${r[10]} ${r[11]} ${r[12]}</td>
   <td class="t-w">${r[13].toFixed(2)}%</td>
   <td class="t-score" style="color:${sev(r[6])}">${r[6].toFixed(1)}<span class="conf" style="background:${CONF[r[8]]}"></span></td>
@@ -305,6 +308,10 @@ document.getElementById("tbody").innerHTML=IND.slice().sort((a,b)=>b[13]-a[13]).
   }
   tick(); setInterval(tick,1000);
 })();
+
+document.getElementById("stamp").innerHTML=
+  `Rebuilt ${UPDATED} · 50 indicators · 10 domains<br>`+
+  `Weighted index ${WEIGHTED}% · Equal-weight index ${FLAT}%`;
 
 setMode("w");
 </script>

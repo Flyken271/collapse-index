@@ -26,6 +26,6 @@ jobs:
         run: |
           git config user.name  "collapse-index-bot"
           git config user.email "actions@github.com"
-          git add docs/data.js state.json
+          git add web/data.js state.json
           git diff --staged --quiet || git commit -m "data: rebuild $(date -u +%Y-%m-%d)"
           git push
