@@ -102,6 +102,7 @@ tr:last-child td{border-bottom:0}
 .key i{font-style:normal;display:inline-flex;align-items:center;gap:7px}
 footer{padding-block:38px 56px;border-top:1px solid var(--line)}
 .stamp{font-family:var(--mono);font-size:.68rem;color:var(--bone-dim);letter-spacing:.08em;line-height:1.9}
+.affil{opacity:.6}
 @media(prefers-reduced-motion:no-preference){.fill{transition:width .9s cubic-bezier(.22,1,.36,1)}}
 </style>
 
@@ -311,7 +312,8 @@ document.getElementById("tbody").innerHTML=IND.slice().sort((a,b)=>b[13]-a[13]).
 
 document.getElementById("stamp").innerHTML=
   `Rebuilt ${UPDATED} · 50 indicators · 10 domains<br>`+
-  `Weighted index ${WEIGHTED}% · Equal-weight index ${FLAT}%`;
+  `Weighted index ${WEIGHTED}% · Equal-weight index ${FLAT}%<br>`+
+  `<span class="affil">Independent project. Not affiliated with or endorsed by any organization cited.</span>`;
 
 setMode("w");
 </script>
