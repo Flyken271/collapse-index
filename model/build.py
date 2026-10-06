@@ -68,7 +68,7 @@ def main():
           f"const ANCHOR_MS={int(now.timestamp()*1000)};\n"
           f"const YEARS_TO_COLLAPSE={round(years,4)};\n"
           f"const UPDATED=\"{now.strftime('%-d %B %Y')}\";\n")
-    (ROOT / "web" / "data.js").write_text(js)
+    (ROOT / "docs" / "data.js").write_text(js)
     STATE.write_text(json.dumps(state, indent=1))
 
     print(f"\nweighted {w['weighted']}%  |  equal {w['flat']}%  "
