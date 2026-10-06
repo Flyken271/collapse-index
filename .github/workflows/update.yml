@@ -1,0 +1,31 @@
+name: Rebuild index
+
+on:
+  schedule:
+    # 03:47 UTC — the late edge of the global news trough (see model/schedule.py).
+    # US East is at 23:47, Europe at 04:47–05:47 and about to ramp at 06:00 local.
+    # Minute 47 avoids the top-of-hour Actions queue, where scheduled runs are
+    # most often delayed or dropped.
+    - cron: "47 3 * * *"
+  workflow_dispatch:           # manual run button
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy scipy
+      - run: python3 model/build.py
+      - name: Commit if changed
+        run: |
+          git config user.name  "collapse-index-bot"
+          git config user.email "actions@github.com"
+          git add web/data.js state.json
+          git diff --staged --quiet || git commit -m "data: rebuild $(date -u +%Y-%m-%d)"
+          git push

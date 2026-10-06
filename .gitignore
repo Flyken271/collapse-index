@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+index_data.json
+weighted_data.json
+projection.json
+countdown.json

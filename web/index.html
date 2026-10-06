@@ -1,0 +1,310 @@
+<title>Collapse Index</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one full-bleed readout, then an instrument panel of breakdowns beneath it. */
+:root{
+  color-scheme: dark;
+  --ink:#0a0c11; --ink-2:#11151d; --line:#232a36;
+  --bone:#e9e5dc; --bone-dim:#8d94a3;
+  --calm:#4a9d7f; --watch:#c9a227; --alarm:#d0552f; --crit:#b5243a;
+  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+body{background:var(--ink);color:var(--bone);font-family:var(--display);margin:0;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-inline:20px}
+
+.hero{min-height:78svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-block:72px 56px}
+.readout{font-weight:800;font-size:clamp(7rem,30vw,22rem);line-height:.82;letter-spacing:-.045em;
+  font-variant-numeric:tabular-nums;color:var(--alarm);margin:0}
+.readout sup{font-size:.3em;vertical-align:super;letter-spacing:0;margin-left:.04em}
+.statement{font-size:clamp(1rem,2.6vw,1.45rem);color:var(--bone);max-width:24ch;text-wrap:balance;margin:22px 0 0;line-height:1.45}
+.statement b{font-weight:600}
+.countdown{margin-top:34px}
+.cd-row{display:flex;gap:clamp(10px,3vw,24px);justify-content:center;flex-wrap:wrap}
+.cd-unit{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:46px}
+.cd-num{font-family:var(--mono);font-weight:600;font-size:clamp(1.15rem,3.6vw,1.7rem);
+  color:var(--bone);font-variant-numeric:tabular-nums;line-height:1}
+.cd-lab{font-family:var(--mono);font-size:.58rem;letter-spacing:.16em;text-transform:uppercase;color:var(--bone-dim)}
+.cd-note{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--bone-dim);margin-top:16px;opacity:.75}
+.scale{display:flex;gap:14px;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--bone-dim);margin-top:34px;flex-wrap:wrap;justify-content:center}
+.scrollcue{font-family:var(--mono);font-size:.64rem;letter-spacing:.22em;text-transform:uppercase;color:var(--bone-dim);margin-top:46px}
+
+section{padding-block:56px;border-top:1px solid var(--line)}
+h2{font-family:var(--mono);font-size:.72rem;font-weight:500;letter-spacing:.2em;text-transform:uppercase;color:var(--bone-dim);margin:0 0 6px}
+.lede{font-size:1.02rem;color:var(--bone);max-width:64ch;margin:0 0 30px;line-height:1.55}
+
+/* toggle */
+.toggle{display:inline-flex;border:1px solid var(--line);margin-bottom:26px}
+.toggle button{background:none;border:0;color:var(--bone-dim);font-family:var(--mono);font-size:.68rem;
+  letter-spacing:.12em;text-transform:uppercase;padding:9px 15px;cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--ink-2);color:var(--bone)}
+.toggle button:focus-visible{outline:2px solid var(--watch);outline-offset:-2px}
+
+.bars{display:grid;gap:3px}
+.bar{display:grid;grid-template-columns:120px 42px 1fr 52px;align-items:center;gap:12px;padding:9px 0}
+.bar .name{font-size:.88rem;min-width:0}
+.bar .share{font-family:var(--mono);font-size:.68rem;color:var(--bone-dim);text-align:right;font-variant-numeric:tabular-nums}
+.bar .track{height:9px;background:var(--ink-2);border:1px solid var(--line);position:relative;min-width:0}
+.bar .fill{position:absolute;inset:0 auto 0 0;height:100%}
+.bar .val{font-family:var(--mono);font-size:.82rem;text-align:right;font-variant-numeric:tabular-nums;color:var(--bone-dim)}
+@media(max-width:560px){.bar{grid-template-columns:86px 36px 1fr 42px;gap:8px}.bar .name{font-size:.75rem}}
+
+/* axis explainer */
+.axes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:28px}
+.axis{background:var(--ink-2);border:1px solid var(--line);padding:15px 16px}
+.axis h3{font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--watch);margin:0 0 7px;font-weight:500}
+.axis p{margin:0;font-size:.85rem;line-height:1.5;color:var(--bone-dim)}
+.formula{font-family:var(--mono);font-size:.86rem;background:var(--ink-2);border:1px solid var(--line);
+  padding:14px 16px;color:var(--bone);overflow-x:auto;margin-bottom:26px}
+
+/* countries */
+.tiers{display:grid;gap:11px}
+.country{display:grid;grid-template-columns:30px 1fr auto;gap:16px;align-items:center;background:var(--ink-2);
+  border:1px solid var(--line);border-left:3px solid var(--tier);padding:13px 16px;min-width:0}
+.rank{font-family:var(--mono);font-size:.84rem;color:var(--bone-dim);font-variant-numeric:tabular-nums}
+.cname{font-size:1rem;font-weight:600;margin-bottom:3px}
+.ctier{font-family:var(--mono);font-size:.66rem;letter-spacing:.11em;text-transform:uppercase;color:var(--tier)}
+.cstats{font-family:var(--mono);font-size:.72rem;color:var(--bone-dim);text-align:right;white-space:nowrap;
+  font-variant-numeric:tabular-nums;line-height:1.7}
+.floor{opacity:.62}
+@media(max-width:620px){.country{grid-template-columns:26px 1fr}.cstats{grid-column:2;text-align:left;margin-top:5px;white-space:normal}}
+
+/* chart */
+.chartbox{border:1px solid var(--line);background:var(--ink-2);padding:20px 18px 10px}
+svg{display:block;width:100%;height:auto}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:.68rem;color:var(--bone-dim);margin-top:14px;padding-left:2px}
+.legend i{font-style:normal;display:inline-flex;align-items:center;gap:7px}
+.swatch{width:14px;height:3px;display:inline-block}
+
+/* table */
+.tablewrap{overflow-x:auto;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:.84rem;min-width:760px}
+th{font-family:var(--mono);font-size:.63rem;letter-spacing:.14em;text-transform:uppercase;color:var(--bone-dim);
+  text-align:left;font-weight:500;padding:11px 13px;border-bottom:1px solid var(--line);background:var(--ink-2);position:sticky;top:0}
+td{padding:10px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+.t-dom{font-family:var(--mono);font-size:.68rem;color:var(--bone-dim);letter-spacing:.07em;text-transform:uppercase}
+.t-val,.t-score,.t-w,.t-ax{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.t-score{font-weight:600;text-align:right}
+.t-w{text-align:right;color:var(--bone-dim)}
+.t-ax{font-size:.7rem;color:var(--bone-dim);letter-spacing:.06em}
+.conf{display:inline-block;width:7px;height:7px;border-radius:50%;margin-left:7px;vertical-align:middle}
+
+.method{font-size:.93rem;line-height:1.65;color:var(--bone-dim);max-width:68ch}
+.method p{margin:0 0 15px}
+.method strong{color:var(--bone);font-weight:600}
+.key{display:flex;gap:20px;flex-wrap:wrap;font-family:var(--mono);font-size:.7rem;color:var(--bone-dim);margin-top:22px}
+.key i{font-style:normal;display:inline-flex;align-items:center;gap:7px}
+footer{padding-block:38px 56px;border-top:1px solid var(--line)}
+.stamp{font-family:var(--mono);font-size:.68rem;color:var(--bone-dim);letter-spacing:.08em;line-height:1.9}
+@media(prefers-reduced-motion:no-preference){.fill{transition:width .9s cubic-bezier(.22,1,.36,1)}}
+</style>
+
+<div class="hero">
+  <p class="readout" id="readout">53<sup>%</sup></p>
+  <p class="statement">The world is <b>53% of the way</b> to collapse.</p>
+
+  <div class="countdown" id="countdown" aria-live="off">
+    <div class="cd-row" id="cdrow"></div>
+    <div class="cd-note">at today's rate of change · re-solved each time the sources update</div>
+  </div>
+
+  <div class="scale"><span>0% — in harmony</span><span>100% — society ends</span></div>
+  <div class="scrollcue">What the number is made of ↓</div>
+</div>
+
+<div class="wrap">
+
+<section>
+  <h2>Ten domains</h2>
+  <p class="lede">Fifty measured indicators, grouped. Each is scored against a stated healthy baseline and a stated collapse threshold. The second column is how much of the total weight that domain carries.</p>
+  <div class="toggle" role="group" aria-label="Weighting mode">
+    <button id="bw" aria-pressed="true">Weighted</button>
+    <button id="bf" aria-pressed="false">Equal weight</button>
+  </div>
+  <div class="bars" id="bars"></div>
+</section>
+
+<section>
+  <h2>How the weighting works</h2>
+  <p class="lede">A hazard that can cross its entire range before anyone reacts matters more than one of equal size that takes forty years to arrive. So weights are derived from four scored axes rather than assigned by hand.</p>
+  <div class="axes">
+    <div class="axis"><h3>S · Severity ceiling</h3><p>How much of civilization this could end at its worst. Nuclear exchange scores 5. Orbital debris scores 1.</p></div>
+    <div class="axis"><h3>V · Velocity</h3><p>How fast it can travel from here to catastrophic. 5 is minutes. 1 is decades. Launch orders and carbon curves sit at opposite ends.</p></div>
+    <div class="axis"><h3>I · Irreversibility</h3><p>Whether the catastrophic state can be undone. Extinction is permanent. Inflation is not.</p></div>
+    <div class="axis"><h3>C · Coupling</h3><p>How strongly failure here drags other domains down with it.</p></div>
+  </div>
+  <div class="formula">weight ∝ S<sup>1.0</sup> × V<sup>0.8</sup> × I<sup>0.4</sup> × C<sup>0.6</sup></div>
+  <p class="method" style="max-width:64ch">Velocity carries the second-largest exponent deliberately. The result puts 26.6% of all weight on the nuclear domain and 0.28% on inflation. Switching to equal weight moves the headline from 53% to 45% — the clearest evidence that weighting is a real decision and not a formality.</p>
+</section>
+
+<section>
+  <h2>If current rates held</h2>
+  <p class="lede">Domains are coupled: resource scarcity drives conflict, conflict drives nuclear risk. Running those couplings forward from today, with each domain's observed rate of change, gives the path below. This is an extrapolation of the last two years, not a forecast — real crises break exactly the assumptions it relies on.</p>
+  <div class="chartbox"><svg id="chart" viewBox="0 0 720 300" role="img" aria-label="Projected index and domain paths over ten years"></svg></div>
+  <div class="legend">
+    <i><span class="swatch" style="background:var(--crit)"></span>Nuclear</i>
+    <i><span class="swatch" style="background:var(--alarm)"></span>Composite index</i>
+    <i><span class="swatch" style="background:var(--calm)"></span>Climate</i>
+  </div>
+  <p class="method" style="margin-top:24px;max-width:64ch">Holding any single domain at today's level and rerunning shows where the leverage is. Nuclear removes 6.8 points from the ten-year figure, conflict 6.0, technology 4.0. Pollution removes 0.1.</p>
+</section>
+
+<section>
+  <h2>Capability to cause it</h2>
+  <p class="lede">Ranked by capacity to inflict civilizational damage — warheads and delivery systems first, military and economic weight second. The tiers describe what a state could do, not what it intends to do.</p>
+  <div class="tiers" id="tiers"></div>
+</section>
+
+<section>
+  <h2>All fifty indicators</h2>
+  <p class="lede">Current value, the four axis scores, the resulting weight, and how far the value sits between a healthy world and a finished one.</p>
+  <div class="tablewrap">
+    <table><thead><tr>
+      <th>Domain</th><th>Indicator</th><th>Current</th><th>S V I C</th>
+      <th style="text-align:right">Weight</th><th style="text-align:right">Score</th><th>Source</th>
+    </tr></thead><tbody id="tbody"></tbody></table>
+  </div>
+  <div class="key">
+    <i><span class="conf" style="background:var(--calm)"></span>value confirmed in current reporting</i>
+    <i><span class="conf" style="background:var(--watch)"></span>partially confirmed</i>
+    <i><span class="conf" style="background:var(--alarm)"></span>constructed proxy — no natural metric</i>
+  </div>
+</section>
+
+<section>
+  <h2>How this is built, and what it isn't</h2>
+  <div class="method">
+    <p><strong>The discourse chose the topics. The data set the scores.</strong> Fifty subjects were drawn from what is actually being argued about globally. Scoring then came from measured indicators with named sources, because how alarmed an article sounds is not a measurement.</p>
+    <p><strong>Every anchor is a judgment.</strong> Each indicator needs a value for healthy and a value for finished. Some rest on physics — coral stops accreting below about 5% cover, the Amazon's hydrological cycle fails near 25% clearance. Others, like biodiversity or novel chemical entities, have no threshold anyone can point to. Those are marked.</p>
+    <p><strong>The weighting is derived but the axis scores are not.</strong> The formula is mechanical; the S, V, I and C values feeding it are considered judgments. Both views are on this page so the difference is visible.</p>
+    <p><strong>A single number compresses away everything that matters.</strong> 53% is not a forecast. It says that across fifty measured things, weighted by how fast and how permanently each could go wrong, the world sits just past halfway between a healthy state and a collapsed one. The breakdown is the content; the headline is a handle.</p>
+    <p><strong>Known weak points.</strong> The Living Planet Index is contested and may overstate decline, and it is one of the highest scores here. Several figures in fast-moving areas come from headline-level reporting rather than primary data. The nuclear domain partly double-counts, since the Doomsday Clock already folds climate and biological risk into its own setting.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="stamp">Compiled 6 October 2026 · 50 indicators · 10 domains<br>Weighted index 53.2% · Equal-weight index 44.8%</div>
+</footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+const COUNTRIES=[
+ {r:1,n:"United States",t:"Civilization-ending",w:"5,177 warheads",s:"$997B defence",d:"Full triad · global reach"},
+ {r:2,n:"Russia",t:"Civilization-ending",w:"5,459 warheads",s:"$149B defence",d:"Full triad · lowered use threshold"},
+ {r:3,n:"China",t:"Continental",w:"~600 warheads",s:"$314B defence",d:"Triad maturing · ~+100/yr"},
+ {r:4,n:"France",t:"Continental",w:"~290 warheads",s:"$65B defence",d:"Sea and air launched"},
+ {r:5,n:"United Kingdom",t:"Continental",w:"~225 warheads",s:"$82B defence",d:"Submarine-only deterrent"},
+ {r:6,n:"India",t:"Continental",w:"~180 warheads",s:"$86B defence",d:"Triad emerging"},
+ {r:7,n:"Pakistan",t:"Continental",w:"~170 warheads",s:"$10B defence",d:"Tactical doctrine · India-facing"},
+ {r:8,n:"Israel",t:"Continental",w:"~90 warheads",s:"$47B defence",d:"Undeclared · regional reach"},
+ {r:9,n:"North Korea",t:"Regional",w:"~50 warheads",s:"opaque",d:"ICBM-capable · untested at range"},
+ {r:10,n:"Germany",t:"Conventional only",w:"no warheads",s:"$88B defence",d:"NATO host · no independent arsenal"},
+ {r:"—",n:"Niger",t:"Negligible",w:"no warheads",s:"~$0.3B defence",d:"No strategic reach · scale floor",floor:true}
+];
+const TIERC={"Civilization-ending":"var(--crit)","Continental":"var(--alarm)","Regional":"var(--watch)",
+             "Conventional only":"var(--bone-dim)","Negligible":"var(--calm)"};
+const sev=v=>v>=75?"var(--crit)":v>=50?"var(--alarm)":v>=30?"var(--watch)":"var(--calm)";
+const CONF=[null,"var(--calm)","var(--watch)","var(--alarm)"];
+
+let mode="w";
+function drawBars(){
+  const e=Object.entries(DOM).sort((a,b)=>(mode==="w"?b[1].w-a[1].w:b[1].f-a[1].f));
+  document.getElementById("bars").innerHTML=e.map(([k,v])=>{
+    const val=mode==="w"?v.w:v.f;
+    return `<div class="bar"><div class="name">${k}</div>
+      <div class="share">${mode==="w"?v.share.toFixed(1)+"%":"—"}</div>
+      <div class="track"><div class="fill" style="width:${val}%;background:${sev(val)}"></div></div>
+      <div class="val">${val.toFixed(1)}</div></div>`;}).join("");
+}
+function setMode(m){
+  mode=m;
+  bw.setAttribute("aria-pressed",m==="w"); bf.setAttribute("aria-pressed",m==="f");
+  const v=m==="w"?WEIGHTED:FLAT;
+  const ro=document.getElementById("readout");
+  ro.innerHTML=Math.round(v)+"<sup>%</sup>"; ro.style.color=sev(v);
+  document.querySelector(".statement").innerHTML=
+    `The world is <b>${Math.round(v)}% of the way</b> to collapse.`;
+  drawBars();
+}
+bw.onclick=()=>setMode("w"); bf.onclick=()=>setMode("f");
+
+// ---- projection chart ----
+(function(){
+  const W=720,H=300,L=42,R=12,T=14,B=30;
+  const x=i=>L+(W-L-R)*(PROJ.t[i]/PROJ.t[PROJ.t.length-1]);
+  const y=v=>T+(H-T-B)*(1-v/100);
+  const path=a=>a.map((v,i)=>(i?"L":"M")+x(i).toFixed(1)+" "+y(v).toFixed(1)).join(" ");
+  let g="";
+  for(let v=0;v<=100;v+=25){
+    g+=`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" stroke="#232a36" stroke-width="1"/>`;
+    g+=`<text x="${L-8}" y="${y(v)+4}" fill="#8d94a3" font-size="11" text-anchor="end" font-family="IBM Plex Mono, monospace">${v}</text>`;
+  }
+  PROJ.t.forEach((t,i)=>{ if(t%2===0)
+    g+=`<text x="${x(i)}" y="${H-10}" fill="#8d94a3" font-size="11" text-anchor="middle" font-family="IBM Plex Mono, monospace">${t===0?"now":"+"+t+"y"}</text>`;});
+  const series=[[PROJ.climate,"#4a9d7f"],[PROJ.index,"#d0552f"],[PROJ.nuclear,"#b5243a"]];
+  series.forEach(([a,c])=>{ g+=`<path d="${path(a)}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linejoin="round"/>`;});
+  series.forEach(([a,c])=>{ const i=a.length-1;
+    g+=`<circle cx="${x(i)}" cy="${y(a[i])}" r="3.4" fill="${c}"/>`;
+    g+=`<text x="${x(i)-6}" y="${y(a[i])-9}" fill="${c}" font-size="12" text-anchor="end" font-family="IBM Plex Mono, monospace" font-weight="600">${a[i].toFixed(0)}</text>`;});
+  document.getElementById("chart").innerHTML=g;
+})();
+
+document.getElementById("tiers").innerHTML=COUNTRIES.map(c=>`
+ <div class="country${c.floor?" floor":""}" style="--tier:${TIERC[c.t]}">
+   <div class="rank">${c.r}</div>
+   <div><div class="cname">${c.n}</div><div class="ctier">${c.t}</div>
+     <div class="cstats" style="text-align:left;margin-top:5px">${c.d}</div></div>
+   <div class="cstats">${c.w}<br>${c.s}</div></div>`).join("");
+
+document.getElementById("tbody").innerHTML=IND.slice().sort((a,b)=>b[13]-a[13]).map(r=>`<tr>
+  <td class="t-dom">${r[1]}</td>
+  <td>${r[2]} — <span style="color:var(--bone-dim)">${r[3]}</span></td>
+  <td class="t-val">${r[4].toLocaleString()} ${r[5]}</td>
+  <td class="t-ax">${r[9]} ${r[10]} ${r[11]} ${r[12]}</td>
+  <td class="t-w">${r[13].toFixed(2)}%</td>
+  <td class="t-score" style="color:${sev(r[6])}">${r[6].toFixed(1)}<span class="conf" style="background:${CONF[r[8]]}"></span></td>
+  <td style="color:var(--bone-dim);font-size:.78rem">${r[7]}</td></tr>`).join("");
+
+// ---- doomsday countdown ----
+// Anchored to the last metrics pull. Each pull re-solves the coupled model for
+// the time at which the composite reaches 100, then this counts down to it.
+(function(){
+  const target=new Date(ANCHOR_MS + YEARS_TO_COLLAPSE*365.2425*86400000);
+  const row=document.getElementById("cdrow");
+  const UNITS=[["years","yr"],["months","mo"],["days","day"],["hours","hr"],["minutes","min"],["seconds","sec"]];
+  row.innerHTML=UNITS.map(([k,l])=>
+    `<div class="cd-unit"><div class="cd-num" id="cd-${k}">—</div><div class="cd-lab">${l}</div></div>`).join("");
+
+  function split(ms){
+    if(ms<=0) return {years:0,months:0,days:0,hours:0,minutes:0,seconds:0};
+    const now=new Date(), t=new Date(target);
+    let years=t.getFullYear()-now.getFullYear();
+    let months=t.getMonth()-now.getMonth();
+    let days=t.getDate()-now.getDate();
+    let hours=t.getHours()-now.getHours();
+    let minutes=t.getMinutes()-now.getMinutes();
+    let seconds=t.getSeconds()-now.getSeconds();
+    if(seconds<0){seconds+=60;minutes--}
+    if(minutes<0){minutes+=60;hours--}
+    if(hours<0){hours+=24;days--}
+    if(days<0){const dm=new Date(t.getFullYear(),t.getMonth(),0).getDate();days+=dm;months--}
+    if(months<0){months+=12;years--}
+    return {years,months,days,hours,minutes,seconds};
+  }
+  function tick(){
+    const v=split(target-Date.now());
+    for(const [k] of UNITS){
+      const el=document.getElementById("cd-"+k);
+      el.textContent=k==="years"?v[k]:String(v[k]).padStart(2,"0");
+    }
+  }
+  tick(); setInterval(tick,1000);
+})();
+
+setMode("w");
+</script>
